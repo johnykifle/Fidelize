@@ -5,7 +5,7 @@ Reliable, deterministic transliteration between Latin (romanized) Tigrinya and t
 Tigrinya (ትግርኛ) is spoken by millions in **Eritrea** (where it is one of the working languages) and in the **Tigray region of Ethiopia**. This library is built for developers serving either community.
 
 ```ts
-import { toFidel, toLatin } from "fidelize";
+import { toFidel, toLatin } from "@johnykifle/fidelize";
 
 toFidel("ab tHti 'arat");                       // → "ኣብ ትሕቲ ዓራት"
 toFidel("ab tahti arat", { mode: "casual" });   // → "ኣብ ትሕቲ ዓራት"
@@ -107,16 +107,25 @@ interface TransliterateOptions {
 The library also re-exports the underlying alphabet table:
 
 ```ts
-import { BASES, LATIN_TO_FIDEL, FIDEL_TO_LATIN, fidelChar } from "fidelize";
+import { BASES, LATIN_TO_FIDEL, FIDEL_TO_LATIN, fidelChar } from "@johnykifle/fidelize";
 ```
 
 ## CLI
 
+Install globally (provides a `fidelize` command):
+
 ```sh
-npx fidelize "ab tHti 'arat"           # ኣብ ትሕቲ ዓራት
-npx fidelize --casual "ab tahti arat"  # ኣብ ትሕቲ ዓራት
-npx fidelize --reverse "ሰላም"           # selam
-echo "selam" | npx fidelize
+npm i -g @johnykifle/fidelize
+fidelize "ab tHti 'arat"           # ኣብ ትሕቲ ዓራት
+fidelize --casual "ab tahti arat"  # ኣብ ትሕቲ ዓራት
+fidelize --reverse "ሰላም"           # selam
+echo "selam" | fidelize
+```
+
+Or run ad-hoc with `npx`:
+
+```sh
+npx @johnykifle/fidelize "ab tHti 'arat"
 ```
 
 ## Casual-mode dictionary
@@ -124,7 +133,7 @@ echo "selam" | npx fidelize
 `COMMON_WORDS` is a plain `Record<string, string>` keyed by lowercase Latin. To add coverage:
 
 ```ts
-import { COMMON_WORDS } from "fidelize";
+import { COMMON_WORDS } from "@johnykifle/fidelize";
 const myDict = { ...COMMON_WORDS, "newword": "ሓዲሽ ቃል" };
 ```
 

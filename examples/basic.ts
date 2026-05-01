@@ -1,4 +1,4 @@
-import { toFidel, toLatin } from "fidelize";
+import { toFidel, toLatin } from "@johnykifle/fidelize";
 
 console.log(toFidel("ab tHti 'arat"));
 console.log(toFidel("selam"));
