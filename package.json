@@ -1,6 +1,6 @@
 {
   "name": "fidelize",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "Reliable Tigrinya (ትግርኛ) transliteration for TypeScript — for Eritrea and Ethiopia (Tigray). Latin <-> Fidel (ፊደል / Ge'ez script).",
   "license": "MIT",
   "type": "module",
