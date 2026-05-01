@@ -1,0 +1,51 @@
+{
+  "name": "fidelize",
+  "version": "0.1.0",
+  "description": "Reliable Tigrinya (ትግርኛ) transliteration for TypeScript — for Eritrea and Ethiopia (Tigray). Latin <-> Fidel (ፊደል / Ge'ez script).",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "fidelize": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "demo": "npm run build && npx --yes serve demo"
+  },
+  "keywords": [
+    "tigrinya",
+    "tigrigna",
+    "eritrea",
+    "eritrean",
+    "ethiopia",
+    "ethiopian",
+    "fidel",
+    "ge'ez",
+    "ethiopic",
+    "amharic",
+    "transliteration",
+    "romanization"
+  ],
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.0.0"
+  }
+}

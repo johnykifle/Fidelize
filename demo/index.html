@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>fidelize — Tigrinya Transliterator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #fafaf7;
+      --card: #ffffff;
+      --ink: #1d1d1f;
+      --muted: #6b6b70;
+      --border: #e6e3dc;
+      --accent-fwd: #c9472a;     /* warm: Latin -> Fidel (creating script) */
+      --accent-fwd-bg: #fdf2ed;
+      --accent-rev: #1f6f8b;     /* cool: Fidel -> Latin (decoding) */
+      --accent-rev-bg: #eef5f8;
+      --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #15161a;
+        --card: #1e2026;
+        --ink: #ececec;
+        --muted: #a0a0a8;
+        --border: #2c2e35;
+        --accent-fwd: #ff7a55;
+        --accent-fwd-bg: #2a1d18;
+        --accent-rev: #5fb6d4;
+        --accent-rev-bg: #16242b;
+        --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.4);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    header { margin-bottom: 2rem; text-align: center; }
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem;
+      font-weight: 700;
+    }
+    header h1 .fidel {
+      font-family: "Noto Sans Ethiopic", "Abyssinica SIL", "Nyala", serif;
+      font-weight: 600;
+    }
+    header p {
+      color: var(--muted);
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .card.fwd { border-top: 3px solid var(--accent-fwd); }
+    .card.rev { border-top: 3px solid var(--accent-rev); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .card-title { display: flex; align-items: baseline; gap: 0.5rem; font-weight: 600; }
+    .card.fwd .card-title .arrow { color: var(--accent-fwd); }
+    .card.rev .card-title .arrow { color: var(--accent-rev); }
+    .card-title .arrow { font-weight: 400; }
+    .card-title .sub { color: var(--muted); font-weight: 400; font-size: 0.9rem; }
+
+    .modes {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg);
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .modes label {
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--muted);
+      user-select: none;
+    }
+    .modes input { display: none; }
+    .modes input:checked + span {
+      background: var(--card);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .modes label span {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      margin: -0.3rem -0.7rem;
+      border-radius: 6px;
+    }
+
+    .pane {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+    @media (max-width: 720px) {
+      .pane { grid-template-columns: 1fr; }
+      .pane .arrow-cell { padding: 0.25rem 0; transform: rotate(90deg); }
+    }
+    .pane .side {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .pane .side.in { background: var(--card); }
+    .card.fwd .pane .side.out { background: var(--accent-fwd-bg); }
+    .card.rev .pane .side.out { background: var(--accent-rev-bg); }
+    .pane .side label {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    textarea, .output {
+      width: 100%;
+      min-height: 140px;
+      padding: 0.75rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--ink);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      resize: vertical;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    textarea:focus, .output:focus { outline: 2px solid currentColor; outline-offset: 1px; }
+    textarea[data-fidel="true"], .output[data-fidel="true"] {
+      font-family: "Noto Sans Ethiopic", "Abyssinica SIL", "Nyala", serif;
+      font-size: 1.4rem;
+      line-height: 1.7;
+    }
+    .output {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      cursor: text;
+    }
+    .output:empty::before { content: attr(data-placeholder); color: var(--muted); }
+
+    .arrow-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.5rem;
+      color: var(--muted);
+      font-size: 1.25rem;
+    }
+    .card.fwd .arrow-cell { color: var(--accent-fwd); }
+    .card.rev .arrow-cell { color: var(--accent-rev); }
+
+    .copy-btn {
+      align-self: flex-end;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .copy-btn:hover { color: var(--ink); border-color: var(--ink); }
+    .copy-btn.copied { color: var(--accent-fwd); border-color: var(--accent-fwd); }
+    .card.rev .copy-btn.copied { color: var(--accent-rev); border-color: var(--accent-rev); }
+
+    .examples {
+      margin-top: 2rem;
+      padding: 1.25rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .examples h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .examples .group { margin-bottom: 0.75rem; }
+    .examples .group-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    .examples button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--ink);
+      margin: 0.15rem 0.2rem 0.15rem 0;
+    }
+    .examples button:hover { border-color: var(--ink); }
+    .examples button.fidel-btn {
+      font-family: "Noto Sans Ethiopic", "Abyssinica SIL", "Nyala", serif;
+      font-size: 1rem;
+    }
+
+    .scheme {
+      margin-top: 1.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .scheme code {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.05rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .scheme .fidel-inline {
+      font-family: "Noto Sans Ethiopic", "Abyssinica SIL", "Nyala", serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>fidelize <span class="fidel">ፊደል</span></h1>
+      <p>Tigrinya transliterator — type Latin and watch it become Fidel, or paste Fidel and read it back as Latin.</p>
+      <p style="font-size: 0.85rem; margin-top: 0.4rem;">Tigrinya (ትግርኛ) is spoken in <strong>Eritrea</strong> and in the <strong>Tigray region of Ethiopia</strong>.</p>
+    </header>
+
+    <!-- Latin -> Fidel -->
+    <section class="card fwd" aria-labelledby="fwd-title">
+      <div class="card-header">
+        <div class="card-title">
+          <span id="fwd-title">Latin</span>
+          <span class="arrow">→</span>
+          <span class="fidel-inline" style="font-family: 'Noto Sans Ethiopic', 'Abyssinica SIL', serif;">ፊደል</span>
+          <span class="sub">type romanized Tigrinya</span>
+        </div>
+        <div class="modes" role="radiogroup" aria-label="Conversion mode">
+          <label><input type="radio" name="mode-fwd" value="strict" checked /><span>Strict</span></label>
+          <label><input type="radio" name="mode-fwd" value="casual" /><span>Casual</span></label>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="side in">
+          <label for="latin-in">Latin input</label>
+          <textarea id="latin-in" autofocus spellcheck="false" placeholder="ab tHti 'arat">ab tHti 'arat</textarea>
+        </div>
+        <div class="arrow-cell" aria-hidden="true">→</div>
+        <div class="side out">
+          <label for="fidel-out">Fidel output</label>
+          <div id="fidel-out" class="output" data-fidel="true" data-placeholder="Fidel will appear here…" aria-live="polite"></div>
+          <button class="copy-btn" data-copy-target="fidel-out">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fidel -> Latin -->
+    <section class="card rev" aria-labelledby="rev-title">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="fidel-inline" id="rev-title" style="font-family: 'Noto Sans Ethiopic', 'Abyssinica SIL', serif;">ፊደል</span>
+          <span class="arrow">→</span>
+          <span>Latin</span>
+          <span class="sub">paste Tigrinya text</span>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="side in">
+          <label for="fidel-in">Fidel input</label>
+          <textarea id="fidel-in" data-fidel="true" spellcheck="false" placeholder="ሰላም ዓለም">ሰላም ዓለም</textarea>
+        </div>
+        <div class="arrow-cell" aria-hidden="true">→</div>
+        <div class="side out">
+          <label for="latin-out">Latin output</label>
+          <div id="latin-out" class="output" data-placeholder="Latin will appear here…" aria-live="polite"></div>
+          <button class="copy-btn" data-copy-target="latin-out">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="examples">
+      <h3>Try one of these</h3>
+      <div class="group">
+        <span class="group-label">Strict (Latin → Fidel)</span>
+        <button data-target="latin-in" data-mode="strict" data-ex="ab tHti 'arat">ab tHti 'arat</button>
+        <button data-target="latin-in" data-mode="strict" data-ex="selam Halewa kemey aleka">selam Halewa kemey aleka</button>
+        <button data-target="latin-in" data-mode="strict" data-ex="Hawi may">Hawi may</button>
+        <button data-target="latin-in" data-mode="strict" data-ex="he hu hi ha hie h ho">full ሀ row</button>
+        <button data-target="latin-in" data-mode="strict" data-ex="gWal qWanqWa kWanat">labialized: gWal qWanqWa</button>
+      </div>
+      <div class="group">
+        <span class="group-label">Casual (lowercase + dictionary)</span>
+        <button data-target="latin-in" data-mode="casual" data-ex="ab tahti arat">ab tahti arat</button>
+        <button data-target="latin-in" data-mode="casual" data-ex="selam alem">selam alem</button>
+        <button data-target="latin-in" data-mode="casual" data-ex="hade klte seleste">hade klte seleste</button>
+      </div>
+      <div class="group">
+        <span class="group-label">Fidel → Latin</span>
+        <button class="fidel-btn" data-target="fidel-in" data-ex="ሰላም ዓለም">ሰላም ዓለም</button>
+        <button class="fidel-btn" data-target="fidel-in" data-ex="ኣብ ትሕቲ ዓራት">ኣብ ትሕቲ ዓራት</button>
+        <button class="fidel-btn" data-target="fidel-in" data-ex="ቋንቋ ትግርኛ">ቋንቋ ትግርኛ</button>
+      </div>
+    </div>
+
+    <p class="scheme">
+      <strong>Strict scheme:</strong> lowercase = soft (<code>h</code> → <span class="fidel-inline">ሀ</span>),
+      uppercase = hard / emphatic (<code>H</code> → <span class="fidel-inline">ሐ</span>,
+      <code>T</code> → <span class="fidel-inline">ጠ</span>,
+      <code>P</code> → <span class="fidel-inline">ጰ</span>,
+      <code>Ch</code> → <span class="fidel-inline">ጨ</span>,
+      <code>Ts</code> → <span class="fidel-inline">ፀ</span>).
+      Vowels: <code>e u i a ie o</code> (1st–5th, 7th orders); bare consonant = 6th order
+      (<code>b</code> → <span class="fidel-inline">ብ</span>).
+      <code>'</code> for the ayn series (<code>'a</code> → <span class="fidel-inline">ዓ</span>),
+      <code>I</code> for standalone <span class="fidel-inline">እ</span>,
+      <code>W</code> for labialized rows (<code>kWa</code> → <span class="fidel-inline">ኳ</span>).
+    </p>
+  </div>
+
+  <script type="module">
+    import { toFidel, toLatin } from "../dist/index.js";
+
+    const latinIn = document.getElementById("latin-in");
+    const fidelOut = document.getElementById("fidel-out");
+    const fidelIn = document.getElementById("fidel-in");
+    const latinOut = document.getElementById("latin-out");
+
+    function fwdMode() {
+      const r = document.querySelector('input[name="mode-fwd"]:checked');
+      return r ? r.value : "strict";
+    }
+
+    function updateForward() {
+      fidelOut.textContent = toFidel(latinIn.value, { mode: fwdMode() });
+    }
+    function updateReverse() {
+      latinOut.textContent = toLatin(fidelIn.value);
+    }
+
+    latinIn.addEventListener("input", updateForward);
+    fidelIn.addEventListener("input", updateReverse);
+    document.querySelectorAll('input[name="mode-fwd"]').forEach((r) =>
+      r.addEventListener("change", updateForward)
+    );
+
+    // Examples
+    document.querySelectorAll(".examples button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (!target) return;
+        target.value = btn.dataset.ex || "";
+        const mode = btn.dataset.mode;
+        if (mode) {
+          const r = document.querySelector(`input[name="mode-fwd"][value="${mode}"]`);
+          if (r) r.checked = true;
+        }
+        if (target === latinIn) updateForward();
+        else if (target === fidelIn) updateReverse();
+        target.focus();
+      });
+    });
+
+    // Copy buttons
+    document.querySelectorAll(".copy-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.copyTarget;
+        if (!id) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        const text = el.textContent ?? "";
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = "Copied ✓";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = original ?? "Copy";
+            btn.classList.remove("copied");
+          }, 1100);
+        } catch {
+          /* clipboard not available */
+        }
+      });
+    });
+
+    updateForward();
+    updateReverse();
+  </script>
+</body>
+</html>
